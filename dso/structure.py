@@ -56,9 +56,19 @@ class JunctionTarget(Base):
     degree = Column('cnt', Integer)
 
 
-# mapped class to the delimited strokes table
-class DelimitedStroke(Base):
-    __tablename__ = 'delimitedstrokes'
+# mapped class to the delimited strokes table of the reference database
+class DelimitedStrokeRef(Base):
+    __tablename__ = 'delimited_strokes_ref'
+    id = Column(Integer, primary_key=True)
+    geom = Column(Geometry('LINESTRING'))
+    level = Column(Integer)
+    begin_junction_id = Column(Integer)
+    end_junction_id = Column(Integer)
+
+
+# mapped class to the delimited strokes table of the target database
+class DelimitedStrokeTarget(Base):
+    __tablename__ = 'delimited_strokes_target'
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
     level = Column(Integer)

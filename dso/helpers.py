@@ -1,4 +1,4 @@
-from structure import DelimitedStroke
+from structure import DelimitedStrokeRef
 from sqlalchemy.sql import func
 from math import pi
 from dso import deviation_angle
@@ -49,7 +49,7 @@ def classify_junction(junction, session):
 # if a delimited_stroke is given as input, the next road_section is added to this delimited_stroke
 def construct_stroke(road_section, junction, session, delimited_stroke=None):
     if delimited_stroke is None:
-        delimited_stroke = DelimitedStroke(geom=road_section.geom, begin_junction_id=junction.id, level=1)
+        delimited_stroke = DelimitedStrokeRef(geom=road_section.geom, begin_junction_id=junction.id, level=1)
         session.add(delimited_stroke)
         session.flush()
         # print(f'stroke created with id: {delimited_stroke.id}, starting at {junction.id}')

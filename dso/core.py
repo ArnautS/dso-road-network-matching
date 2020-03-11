@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStroke
+from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef
 from helpers import classify_junction, construct_strokes
 
 # create a connection with the database holding the road_section, junction and delimited_stroke tables
@@ -12,7 +12,7 @@ junctions_ref = session.query(JunctionRef) #.limit(10)
 junctions_target = session.query(JunctionTarget)
 
 # reset previously generated strokes
-session.query(DelimitedStroke).delete()
+session.query(DelimitedStrokeRef).delete()
 road_sections_ref = session.query(RoadSectionRef)
 for each in road_sections_ref:
     each.delimited_stroke = None
