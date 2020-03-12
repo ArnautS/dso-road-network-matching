@@ -68,18 +68,23 @@ def construct_stroke(road_section, junction, session, delimited_stroke=None):
         next_junction = road_section.begin_junction
 
     # print(f'junction: {junction.id}, next junction: {next_junction.id}')
+    if next_junction.degree == 2:
+        for next_road_section in next_junction.road_sections:
+            if next_road_section != road_section:
+                delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
+                return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
     if next_junction.degree == 2 or next_junction.degree == 3:
+        session.commit()
         current_angle = angle_at_junction(road_section, next_junction, session)
         for next_road_section in next_junction.road_sections:
             if next_road_section != road_section:
                 angle_between_sections = angle_difference(current_angle, angle_at_junction(next_road_section, next_junction, session))
                 if pi - deviation_angle < angle_between_sections < pi + deviation_angle:
-                    print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}, stroke id = {delimited_stroke.id}')
+                    # print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}, stroke id = {delimited_stroke.id}')
                     if func.st_startpoint(delimited_stroke.geom) == func.st_startpoint(delimited_stroke.geom):
                         print("help")
                         break
                     delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
-
                     return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
 
     delimited_stroke.end_junction_id = next_junction.id
@@ -94,7 +99,7 @@ def construct_strokes(junctions, session):
         if junction.degree == 1 or junction.degree > 2:
             if junction.type_k3 == 2:
                 for road_section in junction.road_sections:
-                    if junction.angle_k3 == angle_at_junction(road_section, junction, session):
+                    if junction.angle_k3 == angle_at_junction(road_section, junction, session) and road_section.delimited_stroke is None:
                         construct_stroke(road_section, junction, session)
                         break
             else:

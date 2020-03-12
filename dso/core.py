@@ -17,6 +17,10 @@ road_sections_ref = session.query(RoadSectionRef)
 for each in road_sections_ref:
     each.delimited_stroke = None
 
+road_sections_target = session.query(RoadSectionTarget)
+for each in road_sections_target:
+    each.delimited_stroke = None
+
 # classify_junctions(junctions_ref, session)
 # classify_junctions(junctions_target, session)
 
