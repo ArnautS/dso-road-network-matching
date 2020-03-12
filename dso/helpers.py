@@ -4,8 +4,8 @@ from math import pi
 from dso import deviation_angle
 
 
-# calculates the angle of the line segment of road_section at junction
 def angle_at_junction(road_section, junction, session):
+    """Calculates the angle of the line segment of road_section at junction."""
     assert(road_section in junction.road_sections)
     if road_section.begin_junction == junction:
         angle = session.query(func.ST_Azimuth(junction.geom, road_section.geom.ST_PointN(2)))[0][0]
@@ -14,13 +14,13 @@ def angle_at_junction(road_section, junction, session):
     return angle
 
 
-# calculates the difference between two angles in radians, output in range [0, 2pi]
 def angle_difference(angle_a, angle_b):
+    """Calculates the difference between two angles in radians, output in range [0, 2pi]."""
     return pi - abs(abs(angle_a - angle_b) - pi)
 
 
-# determines the classification of each junction with degree 3 or 4
 def classify_junction(junction, session):
+    """Determines the structure classification of a junction with degree 3."""
     angles = []
     for road_section in junction.road_sections:
         angles.append(angle_at_junction(road_section, junction, session))
@@ -46,14 +46,15 @@ def classify_junction(junction, session):
 
 
 def classify_junctions(junctions, session):
+    """Classifies each junction from the input set of junctions."""
     for junction in junctions:
         if junction.degree == 3 or junction.degree == 4:
             classify_junction(junction, session)
 
 
-# constructs a delimited stroke from the road_section, with junction as its starting point
-# if a delimited_stroke is given as input, the next road_section is added to this delimited_stroke
 def construct_stroke(road_section, junction, session, delimited_stroke=None):
+    """Constructs a delimited stroke from the road_section, with junction as its starting point.
+    If a delimited_stroke is given as input, the next road_section is added to this delimited_stroke."""
     if delimited_stroke is None:
         delimited_stroke = DelimitedStrokeTarget(geom=road_section.geom, begin_junction_id=junction.id, level=1)
         session.add(delimited_stroke)
@@ -86,8 +87,8 @@ def construct_stroke(road_section, junction, session, delimited_stroke=None):
     return delimited_stroke
 
 
-# starts the construction of a stroke from every node that is an effective terminating node
 def construct_strokes(junctions, session):
+    """Starts the construction of a stroke from every node that is an effective terminating node."""
     for junction in junctions:
         # print(f'selected junction: {junction_ref.id} with degree {junction_ref.degree}')
         if junction.degree == 1 or junction.degree > 2:

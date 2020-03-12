@@ -10,8 +10,8 @@ table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'
 
 
-# mapped class to the roadsection table of the reference database
 class RoadSectionRef(Base):
+    """Mapped class to the roadsection table of the reference database."""
     __tablename__ = table_ref
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
@@ -26,8 +26,8 @@ class RoadSectionRef(Base):
     # start_angle = func.st_azimuth(begin_junction.geom, geom.st_pointn(2))
 
 
-# mapped class to the junction table of the reference database
 class JunctionRef(Base):
+    """Mapped class to the junction table of the reference database."""
     __tablename__ = table_ref + junction_table
     id = Column(Integer, primary_key=True)
     geom = Column('the_geom', Geometry('POINT'))
@@ -38,8 +38,8 @@ class JunctionRef(Base):
     angle_k3 = Column(Float)
 
 
-# mapped class to the roadsection table of the target database
 class RoadSectionTarget(Base):
+    """Mapped class to the roadsection table of the target database."""
     __tablename__ = table_target
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
@@ -52,8 +52,8 @@ class RoadSectionTarget(Base):
     delimited_stroke = relationship("DelimitedStrokeTarget", foreign_keys=[delimited_stroke_id])
 
 
-# mapped class to the junction table of the target database
 class JunctionTarget(Base):
+    """Mapped class to the junction table of the target database."""
     __tablename__ = table_target + junction_table
     id = Column(Integer, primary_key=True)
     geom = Column('the_geom', Geometry('POINT'))
@@ -64,8 +64,8 @@ class JunctionTarget(Base):
     angle_k3 = Column(Float)
 
 
-# mapped class to the delimited strokes table of the reference database
 class DelimitedStrokeRef(Base):
+    """Mapped class to the delimited strokes table of the reference database."""
     __tablename__ = 'delimited_strokes_ref'
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
@@ -74,8 +74,8 @@ class DelimitedStrokeRef(Base):
     end_junction_id = Column(Integer)
 
 
-# mapped class to the delimited strokes table of the target database
 class DelimitedStrokeTarget(Base):
+    """"Mapped class to the delimited strokes table of the target database."""
     __tablename__ = 'delimited_strokes_target'
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
