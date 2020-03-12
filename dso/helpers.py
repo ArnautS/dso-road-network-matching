@@ -108,3 +108,8 @@ def construct_strokes(junctions, session):
                         construct_stroke(road_section, junction, session)
                     # print(f'id = {road_section_ref.id}, begin at: {road_section_ref.begin_junction.id}, end at: {road_section_ref.end_junction.id}')
         # print(' ')
+
+
+def reset_delimited_strokes(road_sections):
+    for each in road_sections:
+        each.delimited_stroke = None
