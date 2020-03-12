@@ -1,4 +1,4 @@
-from structure import DelimitedStrokeRef
+from structure import DelimitedStrokeTarget
 from sqlalchemy.sql import func
 from math import pi
 from dso import deviation_angle
@@ -45,11 +45,17 @@ def classify_junction(junction, session):
             junction.angle_k3 = angles[index_perpendicular]
 
 
+def classify_junctions(junctions, session):
+    for junction in junctions:
+        if junction.degree == 3 or junction.degree == 4:
+            classify_junction(junction, session)
+
+
 # constructs a delimited stroke from the road_section, with junction as its starting point
 # if a delimited_stroke is given as input, the next road_section is added to this delimited_stroke
 def construct_stroke(road_section, junction, session, delimited_stroke=None):
     if delimited_stroke is None:
-        delimited_stroke = DelimitedStrokeRef(geom=road_section.geom, begin_junction_id=junction.id, level=1)
+        delimited_stroke = DelimitedStrokeTarget(geom=road_section.geom, begin_junction_id=junction.id, level=1)
         session.add(delimited_stroke)
         session.flush()
         # print(f'stroke created with id: {delimited_stroke.id}, starting at {junction.id}')
@@ -67,8 +73,12 @@ def construct_stroke(road_section, junction, session, delimited_stroke=None):
             if next_road_section != road_section:
                 angle_between_sections = angle_difference(current_angle, angle_at_junction(next_road_section, next_junction, session))
                 if pi - deviation_angle < angle_between_sections < pi + deviation_angle:
-                    # print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}')
+                    print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}, stroke id = {delimited_stroke.id}')
+                    if func.st_startpoint(delimited_stroke.geom) == func.st_startpoint(delimited_stroke.geom):
+                        print("help")
+                        break
                     delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
+
                     return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
 
     delimited_stroke.end_junction_id = next_junction.id
