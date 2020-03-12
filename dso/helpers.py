@@ -111,5 +111,16 @@ def construct_strokes(junctions, session):
 
 
 def reset_delimited_strokes(road_sections):
+    """Resets each delimited stroke of the input road sections"""
     for each in road_sections:
         each.delimited_stroke = None
+
+
+def construct_stroke_from_section(road_section, session):
+    """Constructs a stroke from a single section"""
+    delimited_stroke = DelimitedStrokeTarget(geom=road_section.geom,
+                                             begin_junction_id=road_section.begin_junction_id,
+                                             end_junction_id=road_section.end_junction_id, level=1)
+    session.add(delimited_stroke)
+    session.flush()
+    road_section.delimited_stroke = delimited_stroke
