@@ -84,5 +84,11 @@ class DelimitedStrokeTarget(Base):
     end_junction_id = Column(Integer)
 
 
+class Match:
+    strokes_ref = []
+    strokes_target = []
+    similarity_score = 0
 
-
+    def __init__(self, ref, target):
+        self.strokes_ref.append(ref)
+        self.strokes_target.append(target)
