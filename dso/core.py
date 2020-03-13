@@ -1,6 +1,7 @@
 from dso import session
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, DelimitedStrokeTarget
 from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, construct_stroke
+from matching import find_matching_candidates
 
 
 def process_reference(preprocessing_check):
@@ -35,8 +36,10 @@ def process_target(preprocessing_check):
             construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
 
 
-process_reference(False)
-process_target(False)
+process_reference(True)
+process_target(True)
+
+# find_matching_candidates(session.query(DelimitedStrokeRef), session.query(DelimitedStrokeTarget))
 
 session.commit()
 session.close()
