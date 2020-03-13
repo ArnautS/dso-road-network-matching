@@ -72,21 +72,21 @@ def construct_stroke(road_section, junction, session, delimited_stroke=None):
                 delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
                 return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
     if next_junction.degree == 3:
-        current_angle = angle_at_junction(road_section, next_junction, session)
-        for next_road_section in next_junction.road_sections:
-            if next_road_section != road_section and next_road_section.delimited_stroke is None:
-                angle_between_sections = angle_difference(current_angle, angle_at_junction(next_road_section, next_junction, session))
-                if pi - deviation_angle < angle_between_sections < pi + deviation_angle:
-                    # print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}, stroke id = {delimited_stroke.id}')
-                    if next_road_section.begin_junction == next_road_section.end_junction:
-                        print("looping section found with id", next_road_section.id)
-                        return delimited_stroke
-                    delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
-                    # if delimited_stroke.begin_junction_id == next_road_section.begin_junction_id or \
-                    #         delimited_stroke.begin_junction_id == next_road_section.end_junction_id:
-                    #     print("looping delimited stroke found with id ", delimited_stroke.id)
-                    #     return delimited_stroke
-                    return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
+        if next_junction.type_k3 == 2:
+            current_angle = angle_at_junction(road_section, next_junction, session)
+            if current_angle != next_junction.angle_k3:
+                # select the next stroke which has good continuity
+                for next_road_section in next_junction.road_sections:
+                    if next_road_section != road_section and next_road_section.delimited_stroke is None:
+                        next_angle = angle_at_junction(next_road_section, next_junction, session)
+                        if next_angle != next_junction.angle_k3:
+                            # print(f'continuity at junction: {next_junction.id}, from road {road_section.id} to {next_road_section.id}, stroke id = {delimited_stroke.id}')
+                            if next_road_section.begin_junction == next_road_section.end_junction:
+                                # print("looping section found with id", next_road_section.id, " at junction ", next_junction.id)
+                                delimited_stroke.end_junction_id = next_junction.id
+                                return delimited_stroke
+                            delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
+                            return construct_stroke(next_road_section, next_junction, session, delimited_stroke)
 
     delimited_stroke.end_junction_id = next_junction.id
     return delimited_stroke
