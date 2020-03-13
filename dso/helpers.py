@@ -71,6 +71,7 @@ def construct_stroke(road_section, junction, delimited_stroke):
             if next_road_section != road_section:
                 delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
                 return construct_stroke(next_road_section, next_junction, delimited_stroke)
+
     if next_junction.degree == 3:
         if next_junction.type_k3 == 2:
             current_angle = angle_at_junction(road_section, next_junction)
