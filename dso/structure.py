@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Float
 from geoalchemy2 import Geometry
 
 Base = declarative_base()
-area_name = 'nunspeet'
+area_name = 'utrecht'
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'
@@ -70,8 +70,11 @@ class DelimitedStrokeRef(Base):
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
     level = Column(Integer)
-    begin_junction_id = Column(Integer)
-    end_junction_id = Column(Integer)
+    begin_junction_id = Column(Integer, ForeignKey(table_ref + junction_table + '.id'))
+    end_junction_id = Column(Integer, ForeignKey(table_ref + junction_table + '.id'))
+
+    begin_junction = relationship("JunctionRef", foreign_keys=[begin_junction_id])
+    end_junction = relationship("JunctionRef", foreign_keys=[end_junction_id])
 
 
 class DelimitedStrokeTarget(Base):
@@ -80,8 +83,11 @@ class DelimitedStrokeTarget(Base):
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry('LINESTRING'))
     level = Column(Integer)
-    begin_junction_id = Column(Integer)
-    end_junction_id = Column(Integer)
+    begin_junction_id = Column(Integer, ForeignKey(table_target + junction_table + '.id'))
+    end_junction_id = Column(Integer, ForeignKey(table_target + junction_table + '.id'))
+
+    begin_junction = relationship("JunctionTarget", foreign_keys=[begin_junction_id])
+    end_junction = relationship("JunctionTarget", foreign_keys=[end_junction_id])
 
 
 class Match:
