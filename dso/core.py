@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, DelimitedStrokeTarget
-from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section
+from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, construct_stroke
 
 
 def run_reference(preprocessing_check):
@@ -14,9 +14,9 @@ def run_reference(preprocessing_check):
 
     print("constructing strokes reference database")
     construct_strokes(junctions_ref, session, DelimitedStrokeRef)
-    remaining_sections_target = session.query(RoadSectionTarget).filter(RoadSectionTarget.delimited_stroke_id == None)
-    for road_section in remaining_sections_target:
-        construct_stroke_from_section(road_section, session, DelimitedStrokeTarget)
+    remaining_sections_ref = session.query(RoadSectionRef).filter(RoadSectionRef.delimited_stroke_id == None)
+    for road_section in remaining_sections_ref:
+        construct_stroke_from_section(road_section, session, DelimitedStrokeRef)
 
 
 def run_target(preprocessing_check):
@@ -29,9 +29,11 @@ def run_target(preprocessing_check):
 
     print("constructing strokes target database")
     construct_strokes(junctions_target, session, DelimitedStrokeTarget)
-    remaining_sections_ref = session.query(RoadSectionRef).filter(RoadSectionRef.delimited_stroke_id == None)
-    for road_section in remaining_sections_ref:
-        construct_stroke_from_section(road_section, session, DelimitedStrokeRef)
+    remaining_sections_target = session.query(RoadSectionTarget).filter(RoadSectionTarget.delimited_stroke_id == None)
+    for road_section in remaining_sections_target:
+        if road_section.delimited_stroke is None:
+            delimited_stroke = construct_stroke_from_section(road_section, session, DelimitedStrokeTarget)
+            construct_stroke(road_section, road_section.begin_junction, session, delimited_stroke)
 
 
 # create a connection with the database holding the road_section, junction and delimited_stroke tables
@@ -39,7 +41,7 @@ engine = create_engine('postgresql://postgres:admin@localhost/postgis_sample')
 Session = sessionmaker(bind=engine)
 session = Session()
 
-run_reference(False)
+# run_reference(False)
 run_target(False)
 
 session.commit()
