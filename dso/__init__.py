@@ -2,7 +2,8 @@ from math import pi
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-deviation_angle = pi / 18
+deviation_angle = pi / 18  # radians
+tolerance_distance = 20  # meters
 
 engine = create_engine('postgresql://postgres:admin@localhost/postgis_sample')
 Session = sessionmaker(bind=engine)
