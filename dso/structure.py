@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Float
 from geoalchemy2 import Geometry
 
 Base = declarative_base()
-area_name = 'utrecht'
+area_name = 'nunspeet'
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'
