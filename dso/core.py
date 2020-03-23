@@ -1,3 +1,5 @@
+from sqlalchemy.orm import lazyload
+
 from dso import session
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, DelimitedStrokeTarget
 from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, construct_stroke
@@ -23,7 +25,8 @@ def process_target(preprocessing_check):
     session.query(DelimitedStrokeTarget).delete()
     reset_delimited_strokes(session.query(RoadSectionTarget))
 
-    junctions_target = session.query(JunctionTarget)
+    junctions_target = session.query(JunctionTarget).options(lazyload(JunctionTarget.road_sections)).all()
+    # JunctionTarget.id, JunctionTarget.degree, JunctionTarget.type_k3, JunctionTarget.road_sections
     if preprocessing_check:
         classify_junctions(junctions_target)
 
@@ -36,10 +39,14 @@ def process_target(preprocessing_check):
             construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
 
 
-process_reference(True)
-process_target(True)
+# process_reference(False)
+# process_target(False)
 
-# find_matching_candidates(session.query(DelimitedStrokeRef), session.query(DelimitedStrokeTarget))
+strokes_ref = session.query(DelimitedStrokeRef)
+for stroke_ref in strokes_ref:
+    matches = find_matching_candidates(stroke_ref)
+    for match in matches:
+        print(f'match between {match.strokes_ref[0].id} and {match.strokes_target[0].id}')
 
 session.commit()
 session.close()
