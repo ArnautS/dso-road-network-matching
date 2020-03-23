@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Float
 from geoalchemy2 import Geometry
 
 Base = declarative_base()
-area_name = 'utrecht'
+area_name = 'nunspeet'
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'
@@ -32,7 +32,8 @@ class JunctionRef(Base):
     id = Column(Integer, primary_key=True)
     geom = Column('the_geom', Geometry('POINT'))
     road_sections = relationship("RoadSectionRef", primaryjoin="or_(JunctionRef.id == RoadSectionRef.begin_junction_id, "
-                                                               "JunctionRef.id == RoadSectionRef.end_junction_id)")
+                                                               "JunctionRef.id == RoadSectionRef.end_junction_id)",
+                                 lazy='joined')
     degree = Column('cnt', Integer)
     type_k3 = Column(Integer)
     angle_k3 = Column(Float)
@@ -58,7 +59,7 @@ class JunctionTarget(Base):
     id = Column(Integer, primary_key=True)
     geom = Column('the_geom', Geometry('POINT'))
     road_sections = relationship("RoadSectionTarget", primaryjoin="or_(JunctionTarget.id == RoadSectionTarget.begin_junction_id, "
-                                                                  "JunctionTarget.id == RoadSectionTarget.end_junction_id)")
+                                                                  "JunctionTarget.id == RoadSectionTarget.end_junction_id)", lazy='joined')
     degree = Column('cnt', Integer)
     type_k3 = Column(Integer)
     angle_k3 = Column(Float)
@@ -91,10 +92,7 @@ class DelimitedStrokeTarget(Base):
 
 
 class Match:
-    strokes_ref = []
-    strokes_target = []
-    similarity_score = 0
-
     def __init__(self, ref, target):
-        self.strokes_ref.append(ref)
-        self.strokes_target.append(target)
+        self.strokes_ref = [ref]
+        self.strokes_target = [target]
+        self.similarity_score = 0
