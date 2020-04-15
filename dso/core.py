@@ -46,7 +46,7 @@ def process_target(preprocessing_check):
 # process_target(True)
 
 # strokes_ref = {}
-strokes_ref = session.query(DelimitedStrokeRef)
+strokes_ref = session.query(DelimitedStrokeRef).order_by(DelimitedStrokeRef.id)
 # , func.st_length(DelimitedStrokeRef.geom).label('length'))
 # for stroke, length in strokes_ref_query:
 #     stroke.length = length
