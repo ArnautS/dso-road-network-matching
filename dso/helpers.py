@@ -6,7 +6,7 @@ from dso import deviation_angle, session
 
 def angle_at_junction(road_section, junction):
     """Calculates the angle of the line segment of road_section at junction."""
-    assert (road_section in junction.road_sections)
+    assert (road_section.begin_junction == junction or road_section.end_junction == junction)
     if road_section.begin_junction == junction:
         angle = session.query(func.ST_Azimuth(junction.geom, road_section.geom.ST_PointN(2)))[0][0]
     else:
@@ -119,6 +119,12 @@ def reset_delimited_strokes(road_sections):
     """Resets each delimited stroke of the input road sections"""
     for each in road_sections:
         each.delimited_stroke = None
+
+
+def reset_matches(delimited_strokes):
+    """Resets the match of each delimited stroke from the input strokes"""
+    for each in delimited_strokes:
+        each.match_id = None
 
 
 def construct_stroke_from_section(road_section, delimited_stroke_class):
