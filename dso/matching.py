@@ -58,7 +58,8 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
 
 
 def get_distance(object_a, object_b):
-    assert(object_a.geom and object_b.geom)
+    assert object_a.geom is not None
+    assert object_b.geom is not None
     return session.query(func.st_distance(object_a.geom, object_b.geom)).first()[0]
 
 
