@@ -86,7 +86,8 @@ def construct_stroke(road_section, junction, delimited_stroke):
                                 # print("looping section found with id", next_road_section.id, " at junction ", next_junction.id)
                                 delimited_stroke.end_junction_id = next_junction.id
                                 return delimited_stroke
-                            delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(delimited_stroke.geom, next_road_section.geom)))
+                            delimited_stroke.geom = session.query(func.st_linemerge(func.st_collect(
+                                delimited_stroke.geom, next_road_section.geom)))
                             return construct_stroke(next_road_section, next_junction, delimited_stroke)
 
     delimited_stroke.end_junction_id = next_junction.id

@@ -57,6 +57,11 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
     return None
 
 
+def get_distance(object_a, object_b):
+    assert(object_a.geom and object_b.geom)
+    return session.query(func.st_distance(object_a.geom, object_b.geom)).first()[0]
+
+
 def find_matching_candidates(stroke_ref):
     matches = []
     junction_candidates = nearby_junctions(stroke_ref.begin_junction)
@@ -74,19 +79,16 @@ def find_matching_candidates(stroke_ref):
     for junction_target in junction_candidates:
         for section_target in junction_target.road_sections:
             stroke_target = section_target.delimited_stroke
+            junction_target_other = other_junction(stroke_target, junction_target)
             # check if stroke_target start or ends at junction_target
             if stroke_target.begin_junction == junction_target or stroke_target.end_junction == junction_target:
                 # check if selected strokes already have a match
                 if stroke_target not in [match.strokes_target[0] for match in matches]:  # TODO extend for N:M matches
-                    junction_target_other = other_junction(stroke_target, junction_target)
-                    line_distance_ref = session.query(func.st_distance(stroke_ref.geom,
-                                                                       junction_target_other.geom)).first()[0]
-                    line_distance_target = session.query(func.st_distance(stroke_target.geom,
-                                                                          junction_ref_other.geom)).first()[0]
+                    line_distance_ref = get_distance(stroke_ref, junction_target_other)
+                    line_distance_target = get_distance(stroke_target, junction_ref_other)
                     if line_distance_ref < tolerance_distance or line_distance_target < tolerance_distance:
                         junction_ref_other = other_junction(stroke_ref, junction_ref)
-                        point_distance = session.query(func.st_distance(junction_ref_other.geom,
-                                                                        junction_target_other.geom)).first()[0]
+                        point_distance = get_distance(junction_ref_other, junction_target_other)
                         if point_distance < tolerance_distance:
                             match = Match([stroke_ref], [stroke_target])
                         else:
@@ -100,6 +102,7 @@ def find_matching_candidates(stroke_ref):
                             matches.append(match)
                             print(f'stroke_ref: {stroke_ref.id}, stroke_target: {stroke_target.id}, '
                                   f'junction_target: {junction_target.id}, section_target: {section_target.id}')
+            # elif get_distance(junction_ref_other, junction_target_other)
 
     return matches
 
