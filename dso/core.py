@@ -1,9 +1,12 @@
 from sqlalchemy.orm import lazyload
 
 from dso import session
-from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, DelimitedStrokeTarget
-from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, construct_stroke
+from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, \
+    DelimitedStrokeTarget
+from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, \
+    construct_stroke, reset_matches
 from matching import find_matching_candidates
+from sqlalchemy.sql import func
 
 
 def process_reference(preprocessing_check):
@@ -39,14 +42,34 @@ def process_target(preprocessing_check):
             construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
 
 
-# process_reference(False)
-# process_target(False)
+# process_reference(True)
+# process_target(True)
 
+# strokes_ref = {}
 strokes_ref = session.query(DelimitedStrokeRef)
+# , func.st_length(DelimitedStrokeRef.geom).label('length'))
+# for stroke, length in strokes_ref_query:
+#     stroke.length = length
+# add this to query extra attributes ^
+strokes_target = session.query(DelimitedStrokeTarget)
+
+# for each in strokes_ref:
+#     print(each.length)
+
+reset_matches(strokes_ref)
+reset_matches(strokes_target)
+
+all_matches = []
 for stroke_ref in strokes_ref:
     matches = find_matching_candidates(stroke_ref)
+    all_matches.append(matches)
     for match in matches:
-        print(f'match between {match.strokes_ref[0].id} and {match.strokes_target[0].id}')
-
+        print('Match:', match.id)
+        for stroke in match.strokes_ref:
+            print('reference stroke', stroke.id)
+        for stroke in match.strokes_target:
+            print('target stroke', stroke.id)
+    print(' ')
+print(all_matches)
 session.commit()
 session.close()
