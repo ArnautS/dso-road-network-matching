@@ -2,9 +2,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, ForeignKey, Integer, Float
 from geoalchemy2 import Geometry
+from dso import match_id
+import itertools
 
 Base = declarative_base()
-area_name = 'nunspeet'
+area_name = 'doornspijk'
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'
@@ -73,6 +75,8 @@ class DelimitedStrokeRef(Base):
     level = Column(Integer)
     begin_junction_id = Column(Integer, ForeignKey(table_ref + junction_table + '.id'))
     end_junction_id = Column(Integer, ForeignKey(table_ref + junction_table + '.id'))
+    match_id = Column(Integer)
+    length = None
 
     begin_junction = relationship("JunctionRef", foreign_keys=[begin_junction_id])
     end_junction = relationship("JunctionRef", foreign_keys=[end_junction_id])
@@ -86,13 +90,24 @@ class DelimitedStrokeTarget(Base):
     level = Column(Integer)
     begin_junction_id = Column(Integer, ForeignKey(table_target + junction_table + '.id'))
     end_junction_id = Column(Integer, ForeignKey(table_target + junction_table + '.id'))
+    match_id = Column(Integer)
 
     begin_junction = relationship("JunctionTarget", foreign_keys=[begin_junction_id])
     end_junction = relationship("JunctionTarget", foreign_keys=[end_junction_id])
 
 
 class Match:
+    id_iter = itertools.count()
+
     def __init__(self, ref, target):
-        self.strokes_ref = [ref]
-        self.strokes_target = [target]
+        self.id = next(self.id_iter)
+        self.strokes_ref = ref
+        self.strokes_target = target
         self.similarity_score = 0
+        self.set_stroke_match_id()
+
+    def set_stroke_match_id(self):
+        for stroke in self.strokes_ref:
+            stroke.match_id = self.id
+        for stroke in self.strokes_target:
+            stroke.match_id = self.id
