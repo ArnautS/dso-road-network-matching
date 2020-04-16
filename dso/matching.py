@@ -6,6 +6,8 @@ from math import pi
 
 
 def other_junction(road_section, junction):
+    print(f'section: {road_section.id}, junction: {junction.id}')
+    assert(road_section.begin_junction == junction or road_section.end_junction == junction)
     if road_section.begin_junction == junction:
         return road_section.end_junction
     else:
@@ -37,18 +39,29 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
         junction_to_extend = junction_target
         junction_to_compare = junction_ref
 
+    new_stroke = None
+    if junction_to_extend.type_k3 == 1:
+        for road_section in junction_to_extend.road_sections:
+            if road_section.delimited_stroke != stroke_to_extend[-1] and junction_to_extend.angle_k3 != \
+                    angle_at_junction(road_section, junction_to_extend):
+                new_stroke = road_section.delimited_stroke
+
     if junction_to_extend.degree > 1:
         print(f'extend stroke {stroke_to_extend[-1].id} at junction {junction_to_extend.id}, compare with {junction_to_compare.id}')
-        for section in junction_to_extend.road_sections:
-            if has_good_continuity(section, stroke_to_extend[-1], junction_to_extend):
-                stroke_to_extend.append(section.delimited_stroke)
-                new_end_junction = other_junction(stroke_to_extend[-1], junction_to_extend)
-                point_distance = session.query(func.st_distance(new_end_junction.geom, junction_to_compare.geom)).first()[0]
-                if point_distance < tolerance_distance:
-                    print(f'new match with {stroke_ref[0].id}')
-                    return Match(stroke_ref, stroke_target)
-                # print(f'Extending test at stroke {stroke_to_extend.id}, has good continuity with section '
-                #       f'{section.delimited_stroke.id}')
+        for road_section in junction_to_extend.road_sections:
+            print(f'road_section: {road_section.delimited_stroke.id}, stroke to extend: {stroke_to_extend[-1].id}, junction_to_extend: {junction_to_extend.id}')
+            if road_section.delimited_stroke != stroke_to_extend[-1] and has_good_continuity(road_section, stroke_to_extend[-1], junction_to_extend):
+                new_stroke = road_section.delimited_stroke
+
+    if new_stroke and (new_stroke.begin_junction == junction_to_extend or new_stroke.end_junction == junction_to_extend):
+        stroke_to_extend.append(new_stroke)
+        new_end_junction = other_junction(stroke_to_extend[-1], junction_to_extend)
+        point_distance = session.query(func.st_distance(new_end_junction.geom, junction_to_compare.geom)).first()[0]
+        if point_distance < tolerance_distance:
+            print(f'new match with {stroke_ref[0].id}')
+            return Match(stroke_ref, stroke_target)
+                # print(f'Extending test at stroke {stroke_to_extend.id}, has good continuity with road_section '
+                #       f'{road_section.delimited_stroke.id}')
 
     # TODO make recursive
     max_iterations = 3
@@ -83,27 +96,29 @@ def find_matching_candidates(stroke_ref):
     for junction_target in junction_candidates:
         for section_target in junction_target.road_sections:
             stroke_target = section_target.delimited_stroke
-            junction_target_other = other_junction(stroke_target, junction_target)
-            match = None
-            if get_distance(junction_ref_other, junction_target_other) < tolerance_distance:
+            if stroke_ref.match_id != stroke_target.match_id or stroke_ref.match_id is None:
+                match = None
+
                 if stroke_target.begin_junction == junction_target or stroke_target.end_junction == junction_target:
-                    match = Match([stroke_ref], [stroke_target])
+                    junction_target_other = other_junction(stroke_target, junction_target)
+                    if get_distance(junction_ref_other, junction_target_other) < tolerance_distance:
+                        match = Match([stroke_ref], [stroke_target])
+                    elif get_distance(stroke_ref, junction_target_other) < tolerance_distance or \
+                            get_distance(stroke_target, junction_ref_other) < tolerance_distance:
+                        match = extend_matching_pair([stroke_ref], [stroke_target], junction_ref_other,
+                                                     junction_target_other)
                 else:
-                    print(f'Extend vanaf hier!!!!')
-                    match = extend_matching_pair([stroke_ref], [stroke_target], junction_ref, junction_target_other)
+                    if get_distance(stroke_target.begin_junction, junction_ref_other) < tolerance_distance:
+                        match = extend_matching_pair([stroke_ref], [stroke_target], junction_ref, stroke_target.end_junction)
+                    elif get_distance(stroke_target.end_junction, junction_ref_other) < tolerance_distance:
+                        match = extend_matching_pair([stroke_ref], [stroke_target], junction_ref, stroke_target.begin_junction)
 
-            elif get_distance(stroke_ref, junction_target_other) < tolerance_distance or \
-                    get_distance(stroke_target, junction_ref_other) < tolerance_distance:
-                if stroke_target.begin_junction == junction_target or stroke_target.end_junction == junction_target:
-                    print(f'junction_ref = {junction_ref.id}, junction_target = {junction_target.id}')
-                    match = extend_matching_pair([stroke_ref], [stroke_target], junction_ref_other, junction_target_other)
-
-            if match:
-                if matches:
-                    print(f'extra match for stroke {stroke_ref.id}')
-                matches.append(match)
-                print(f'stroke_ref: {stroke_ref.id}, stroke_target: {stroke_target.id}, '
-                      f'junction_target: {junction_target.id}, section_target: {section_target.id}')
+                if match:
+                    if matches:
+                        print(f'extra match for stroke {stroke_ref.id}')
+                    matches.append(match)
+                    print(f'stroke_ref: {stroke_ref.id}, stroke_target: {stroke_target.id}, '
+                          f'junction_target: {junction_target.id}, section_target: {section_target.id}')
     return matches
 
 
