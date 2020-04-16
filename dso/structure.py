@@ -6,7 +6,7 @@ from dso import match_id
 import itertools
 
 Base = declarative_base()
-area_name = 'nunspeet'
+area_name = 'doornspijk'
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'

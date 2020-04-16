@@ -17,6 +17,7 @@ def other_junction(road_section, junction):
 def has_good_continuity(stroke_a, stroke_b, junction):
     angle_a = angle_at_junction(stroke_a, junction)
     angle_b = angle_at_junction(stroke_b, junction)
+    # print(angle_difference(angle_a, angle_b))
     return pi-deviation_angle < angle_difference(angle_a, angle_b) < pi+deviation_angle
 
 
@@ -49,7 +50,7 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
     if junction_to_extend.degree > 1:
         print(f'extend stroke {stroke_to_extend[-1].id} at junction {junction_to_extend.id}, compare with {junction_to_compare.id}')
         for road_section in junction_to_extend.road_sections:
-            print(f'road_section: {road_section.delimited_stroke.id}, stroke to extend: {stroke_to_extend[-1].id}, junction_to_extend: {junction_to_extend.id}')
+            # print(f'road_section: {road_section.delimited_stroke.id}, stroke to extend: {stroke_to_extend[-1].id}, junction_to_extend: {junction_to_extend.id}')
             if road_section.delimited_stroke != stroke_to_extend[-1] and has_good_continuity(road_section, stroke_to_extend[-1], junction_to_extend):
                 new_stroke = road_section.delimited_stroke
 

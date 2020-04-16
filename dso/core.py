@@ -42,8 +42,9 @@ def process_target(preprocessing_check):
             construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
 
 
-#process_reference(True)
-#process_target(True)
+process_reference(True)
+process_target(True)
+
 # strokes_ref = {}
 strokes_ref = session.query(DelimitedStrokeRef).order_by(DelimitedStrokeRef.id)
 # , func.st_length(DelimitedStrokeRef.geom).label('length'))
