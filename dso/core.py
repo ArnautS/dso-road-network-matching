@@ -42,9 +42,8 @@ def process_target(preprocessing_check):
             construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
 
 
-# process_reference(True)
-# process_target(True)
-
+#process_reference(True)
+#process_target(True)
 # strokes_ref = {}
 strokes_ref = session.query(DelimitedStrokeRef).order_by(DelimitedStrokeRef.id)
 # , func.st_length(DelimitedStrokeRef.geom).label('length'))
@@ -70,6 +69,15 @@ for stroke_ref in strokes_ref:
         for stroke in match.strokes_target:
             print('target stroke', stroke.id)
     print(' ')
-print(all_matches)
+print('-----------------------------------------------------------')
+for matches in all_matches:
+    if len(matches) > 1:
+        for match in matches:
+            print('Match:', match.id)
+            for stroke in match.strokes_ref:
+                print('reference stroke', stroke.id)
+            for stroke in match.strokes_target:
+                print('target stroke', stroke.id)
+        print(' ')
 session.commit()
 session.close()
