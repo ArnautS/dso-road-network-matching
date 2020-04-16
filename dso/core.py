@@ -28,8 +28,7 @@ def process_target(preprocessing_check):
     session.query(DelimitedStrokeTarget).delete()
     reset_delimited_strokes(session.query(RoadSectionTarget))
 
-    junctions_target = session.query(JunctionTarget).options(lazyload(JunctionTarget.road_sections)).all()
-    # JunctionTarget.id, JunctionTarget.degree, JunctionTarget.type_k3, JunctionTarget.road_sections
+    junctions_target = session.query(JunctionTarget)
     if preprocessing_check:
         classify_junctions(junctions_target)
 
@@ -37,13 +36,11 @@ def process_target(preprocessing_check):
     construct_strokes(junctions_target, DelimitedStrokeTarget)
     remaining_sections_target = session.query(RoadSectionTarget).filter(RoadSectionTarget.delimited_stroke_id == None)
     for road_section in remaining_sections_target:
-        if road_section.delimited_stroke is None:
-            delimited_stroke = construct_stroke_from_section(road_section, DelimitedStrokeTarget)
-            construct_stroke(road_section, road_section.begin_junction, delimited_stroke)
+        construct_stroke_from_section(road_section, DelimitedStrokeTarget)
 
 
-process_reference(True)
-process_target(True)
+process_reference(0)
+process_target(0)
 
 # strokes_ref = {}
 strokes_ref = session.query(DelimitedStrokeRef).order_by(DelimitedStrokeRef.id)
@@ -63,12 +60,6 @@ all_matches = []
 for stroke_ref in strokes_ref:
     matches = find_matching_candidates(stroke_ref)
     all_matches.append(matches)
-    for match in matches:
-        print('Match:', match.id)
-        for stroke in match.strokes_ref:
-            print('reference stroke', stroke.id)
-        for stroke in match.strokes_target:
-            print('target stroke', stroke.id)
     print(' ')
 print('-----------------------------------------------------------')
 for matches in all_matches:

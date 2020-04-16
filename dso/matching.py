@@ -6,7 +6,6 @@ from math import pi
 
 
 def other_junction(road_section, junction):
-    print(f'section: {road_section.id}, junction: {junction.id}')
     assert(road_section.begin_junction == junction or road_section.end_junction == junction)
     if road_section.begin_junction == junction:
         return road_section.end_junction
