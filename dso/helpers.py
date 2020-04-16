@@ -7,16 +7,23 @@ from dso import deviation_angle, session
 def angle_at_junction(road_section, junction):
     """Calculates the angle of the line segment of road_section at junction."""
     assert (road_section.begin_junction == junction or road_section.end_junction == junction)
-    if road_section.begin_junction == junction:
+    first_point_section = session.query(func.st_startpoint(road_section.geom))[0][0]
+    if session.query(func.st_equals(first_point_section, junction.geom))[0][0]:
         angle = session.query(func.ST_Azimuth(junction.geom, road_section.geom.ST_PointN(2)))[0][0]
     else:
         angle = session.query(func.ST_Azimuth(junction.geom, road_section.geom.ST_PointN(-2)))[0][0]
+    assert angle is not None
     return angle
 
 
 def angle_difference(angle_a, angle_b):
     """Calculates the difference between two angles in radians, output in range [0, 2pi]."""
     return pi - abs(abs(angle_a - angle_b) - pi)
+
+
+def clockwise_angle_difference(angle_a, angle_b):
+    """Calculates the clockwise difference between two angles in radians, output in range [0, 2pi]."""
+    return (angle_a - angle_b) % (2 * pi)
 
 
 def classify_junction(junction):
@@ -28,7 +35,7 @@ def classify_junction(junction):
     angles.append(angles[0])
     angle_differences = []
     for i, angle in enumerate(angles[:-1]):
-        angle_differences.append(angle_difference(angle, angles[i+1]))
+        angle_differences.append(clockwise_angle_difference(angles[i+1], angle))
     alpha = max(angle_differences)
 
     if junction.degree == 3:
