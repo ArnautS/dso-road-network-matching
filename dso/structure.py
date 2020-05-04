@@ -25,8 +25,6 @@ class RoadSectionRef(Base):
     end_junction = relationship("JunctionRef", foreign_keys=[end_junction_id])
     delimited_stroke = relationship("DelimitedStrokeRef", foreign_keys=[delimited_stroke_id])
 
-    # start_angle = func.st_azimuth(begin_junction.geom, geom.st_pointn(2))
-
 
 class JunctionRef(Base):
     """Mapped class to the junction table of the reference database."""
@@ -94,6 +92,19 @@ class DelimitedStrokeTarget(Base):
 
     begin_junction = relationship("JunctionTarget", foreign_keys=[begin_junction_id])
     end_junction = relationship("JunctionTarget", foreign_keys=[end_junction_id])
+
+
+class DelimitedStroke:
+    id_iter = itertools.count()
+
+    def __init__(self, level):
+        self.id = next(self.id_iter)
+        self.sections = []
+        self.geom = None
+        self.level = level
+        self.begin_junction = None
+        self.end_junction = None
+        self.matches = []
 
 
 class Match:
