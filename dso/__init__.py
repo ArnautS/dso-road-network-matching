@@ -6,6 +6,7 @@ deviation_angle = 20  # degrees
 deviation_angle = deviation_angle * pi / 180  # radians
 tolerance_distance = 20  # meters
 match_id = 0
+delimited_strokes = {}
 
 engine = create_engine('postgresql://postgres:admin@localhost/postgres')
 Session = sessionmaker(bind=engine)
