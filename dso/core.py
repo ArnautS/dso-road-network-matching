@@ -1,9 +1,9 @@
-from dso import session, delimited_strokes
+from dso import session, delimited_strokes_ref, delimited_strokes_target
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, \
     DelimitedStrokeTarget, LinkingTable
-from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, \
-    construct_stroke, reset_matches
-from matching import find_matching_candidates
+from construction import classify_junctions, construct_stroke, construct_strokes, reset_delimited_strokes, \
+    construct_stroke_from_section
+from matching import find_matching_candidates, reset_matches
 from sqlalchemy.sql import func
 
 
@@ -39,6 +39,11 @@ def preprocess_target(preprocessing_check):
 
 def prepare_strokes_lvl2(delimited_stroke_class):
     not_matched_strokes = session.query(delimited_stroke_class).filter(delimited_stroke_class.match_id == None)
+    if delimited_stroke_class == DelimitedStrokeRef:
+        delimited_strokes = delimited_strokes_ref
+    else:
+        delimited_strokes = delimited_strokes_target
+
     for delimited_stroke in not_matched_strokes:
         for road_section in delimited_strokes[delimited_stroke.id]:
             road_section.delimited_stroke = None
@@ -54,30 +59,35 @@ def prepare_strokes_lvl2(delimited_stroke_class):
                                                  delimited_stroke_class.match_id == None).delete()
 
 
-def matching_process(level):
-    strokes_ref = session.query(DelimitedStrokeRef).filter(DelimitedStrokeRef.level == level)
+def matching_process(level, tolerance_distance):
+    strokes_ref = session.query(DelimitedStrokeRef).filter(DelimitedStrokeRef.level == level,
+                                                           DelimitedStrokeRef.match_id == None)
     strokes_target = session.query(DelimitedStrokeTarget).filter(DelimitedStrokeTarget.level == level)
 
-    reset_matches(strokes_ref)
-    reset_matches(strokes_target)
+    # reset_matches(strokes_ref)
+    # reset_matches(strokes_target)
 
     all_matches = []
     for stroke_ref in strokes_ref:
-        matches = find_matching_candidates(stroke_ref)
+        matches = find_matching_candidates(stroke_ref, tolerance_distance)
         if matches:
-            all_matches.append(matches)
-        print(' ')
-    print('-----------------------------------------------------------')
-    for matches in all_matches:
-        if len(matches) > 1:
+            if len(matches) > 2:
+                print('LOTS OF MATCHES HERE !!!!!!!!!!!!!')
+            best_score = 0
+            best_match = None
             for match in matches:
-                print('Match:', match.id)
-                print('score:', match.similarity_score)
-                for stroke in match.strokes_ref:
-                    print('reference stroke', stroke.id)
-                for stroke in match.strokes_target:
-                    print('target stroke', stroke.id)
-            print(' ')
+                if match.similarity_score > best_score:
+                    best_match = match
+                    best_score = match.similarity_score
+
+            if best_match:
+                for stroke_ref in best_match.strokes_ref:
+                    stroke_ref.match_id = best_match.id
+                for stroke_target in best_match.strokes_target:
+                    stroke_target.match_id = best_match.id
+
+                all_matches.append(best_match)
+    print('-----------------------------------------------------------')
 
     return all_matches
 
@@ -99,32 +109,29 @@ for section in session.query(RoadSectionRef):
 preprocess_reference(0)
 preprocess_target(0)
 
-matches_result = matching_process(1)
+matches_result = []
+# matches_result += matching_process(level=1, tolerance_distance=5)
+# matches_result += matching_process(level=1, tolerance_distance=10)
+matches_result += matching_process(level=1, tolerance_distance=20)
 
-# prepare_strokes_lvl2(DelimitedStrokeRef)
+session.flush()
+
+prepare_strokes_lvl2(DelimitedStrokeRef)
 # prepare_strokes_lvl2(DelimitedStrokeTarget)
-#
-# matching_process(2)
+
+matches_result += matching_process(level=2, tolerance_distance=20)
 
 session.query(LinkingTable).delete()
-for matches in matches_result:
-    best_score = 0
-    best_match = None
-    for match in matches:
-        if match.similarity_score > best_score:
-            best_match = match
-            best_score = match.similarity_score
+for match in matches_result:
+    for stroke_ref in match.strokes_ref:
+        for section_ref in delimited_strokes_ref[stroke_ref.id]:
+            for stroke_target in match.strokes_target:
+                for section_target in delimited_strokes_target[stroke_target.id]:
+                    link = LinkingTable(nwb_id=section_ref.id, top10nl_id=section_target.id, match_id=match.id, similarity_score=match.similarity_score)
+                    session.add(link)
+                    session.flush()
 
-    if best_match:
-        for stroke_ref in best_match.strokes_ref:
-            for section_ref in delimited_strokes[stroke_ref.id]:
-                for stroke_target in best_match.strokes_target:
-                    for section_target in delimited_strokes[stroke_target.id]:
-                        link = LinkingTable(nwb_id=section_ref.id, top10nl_id=section_target.id, match_id=best_match.id)
-                        session.add(link)
-                        session.flush()
-
-        print('score:', best_match.similarity_score, ', ref stroke', best_match.strokes_ref[0].id)
+        print('score:', match.similarity_score, ', ref stroke', match.strokes_ref[0].id)
 
 
 session.commit()

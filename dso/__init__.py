@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 deviation_angle = 20  # degrees
 deviation_angle = deviation_angle * pi / 180  # radians
 match_id = 0
-delimited_strokes = {}
+delimited_strokes_ref = {}
+delimited_strokes_target = {}
 
 # tolerance values
 tolerance_distance = 20  # meters
