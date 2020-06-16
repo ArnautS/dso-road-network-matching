@@ -1,7 +1,7 @@
 from dso import session, tolerance_distance, deviation_angle
 from structure import JunctionTarget, Match
 from sqlalchemy import func
-from helpers import angle_at_junction, angle_difference
+from helpers import angle_at_junction, angle_difference, get_length
 from math import pi
 
 
@@ -18,13 +18,6 @@ def has_good_continuity(stroke_a, stroke_b, junction):
     angle_b = angle_at_junction(stroke_b, junction)
     # print(angle_difference(angle_a, angle_b))
     return pi-deviation_angle < angle_difference(angle_a, angle_b) < pi+deviation_angle
-
-
-def get_length(list_of_strokes):
-    length = 0
-    for stroke in list_of_strokes:
-        length += session.query(func.st_length(stroke.geom)).first()[0]
-    return length
 
 
 def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_target):
@@ -102,6 +95,7 @@ def find_matching_candidates(stroke_ref):
                 if stroke_target.begin_junction == junction_target or stroke_target.end_junction == junction_target:
                     junction_target_other = other_junction(stroke_target, junction_target)
                     if get_distance(junction_ref_other, junction_target_other) < tolerance_distance:
+                        print(stroke_ref)
                         match = Match([stroke_ref], [stroke_target])
                     elif get_distance(stroke_ref, junction_target_other) < tolerance_distance or \
                             get_distance(stroke_target, junction_ref_other) < tolerance_distance:

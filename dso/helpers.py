@@ -1,7 +1,8 @@
-from structure import DelimitedStrokeTarget
 from sqlalchemy.sql import func
 from math import pi
-from dso import deviation_angle, session, delimited_strokes
+from dso import deviation_angle, session, delimited_strokes, tolerance_distance
+from sqlalchemy.dialects.postgresql import array
+from sqlalchemy.types import ARRAY
 
 
 def angle_at_junction(road_section, junction):
@@ -150,3 +151,30 @@ def construct_stroke_from_section(road_section, delimited_stroke_class, level=1,
     road_section.delimited_stroke = delimited_stroke
     delimited_strokes[delimited_stroke.id] = [road_section]
     return delimited_stroke
+
+
+def get_length(list_of_strokes):
+    length = 0
+    for stroke in list_of_strokes:
+        length += session.query(func.st_length(stroke.geom)).first()[0]
+    return length
+
+
+def length_difference(stroke_a, stroke_b):
+    return abs(get_length(stroke_a) - get_length(stroke_b))/tolerance_distance
+
+
+def combine_geom(list_of_strokes):
+    '''Expects a list of strokes, returns a combined geometry of the strokes in the list'''
+    geoms = [stroke.geom for stroke in list_of_strokes]
+    return session.query(func.st_astext(func.st_linemerge(func.st_collect(array(geoms)))))[0][0]
+
+
+def get_area(geom):
+    numpoints = session.query(func.st_numpoints(geom))[0][0]
+    if numpoints > 2:
+        return session.query(func.st_area(func.st_makepolygon(func.st_addpoint(geom, func.st_startpoint(geom)))))[0][0]
+    else:
+        return 0
+
+
