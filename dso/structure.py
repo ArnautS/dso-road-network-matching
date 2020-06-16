@@ -103,6 +103,7 @@ class LinkingTable(Base):
     nwb_id = Column(Integer)
     top10nl_id = Column(Integer)
     match_id = Column(Integer)
+    similarity_score = Column(Float)
 
 
 class DelimitedStroke:
@@ -125,7 +126,6 @@ class Match:
         self.id = next(self.id_iter)
         self.strokes_ref = ref
         self.strokes_target = target
-        self.set_stroke_match_id()
         self.geom_ref = None
         self.geom_target = None
         self.set_combined_geom()
