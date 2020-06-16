@@ -1,6 +1,6 @@
 from dso import session, delimited_strokes
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, \
-    DelimitedStrokeTarget
+    DelimitedStrokeTarget, LinkingTable
 from helpers import classify_junctions, construct_strokes, reset_delimited_strokes, construct_stroke_from_section, \
     construct_stroke, reset_matches
 from matching import find_matching_candidates
@@ -64,18 +64,22 @@ def matching_process(level):
     all_matches = []
     for stroke_ref in strokes_ref:
         matches = find_matching_candidates(stroke_ref)
-        all_matches.append(matches)
+        if matches:
+            all_matches.append(matches)
         print(' ')
     print('-----------------------------------------------------------')
     for matches in all_matches:
         if len(matches) > 1:
             for match in matches:
                 print('Match:', match.id)
+                print('score:', match.similarity_score)
                 for stroke in match.strokes_ref:
                     print('reference stroke', stroke.id)
                 for stroke in match.strokes_target:
                     print('target stroke', stroke.id)
             print(' ')
+
+    return all_matches
 
 
 road_sections_ref = {}
@@ -95,17 +99,32 @@ for section in session.query(RoadSectionRef):
 preprocess_reference(0)
 preprocess_target(0)
 
-matching_process(1)
+matches_result = matching_process(1)
 
-prepare_strokes_lvl2(DelimitedStrokeRef)
-prepare_strokes_lvl2(DelimitedStrokeTarget)
+# prepare_strokes_lvl2(DelimitedStrokeRef)
+# prepare_strokes_lvl2(DelimitedStrokeTarget)
+#
+# matching_process(2)
 
-matching_process(2)
+session.query(LinkingTable).delete()
+for matches in matches_result:
+    best_score = 0
+    best_match = None
+    for match in matches:
+        if match.similarity_score > best_score:
+            best_match = match
+            best_score = match.similarity_score
 
-# for stroke in delimited_strokes:
-#     print(stroke)
-#     for section in delimited_strokes[stroke]:
-#         print(section.id)
+    if best_match:
+        for stroke_ref in best_match.strokes_ref:
+            for section_ref in delimited_strokes[stroke_ref.id]:
+                for stroke_target in best_match.strokes_target:
+                    for section_target in delimited_strokes[stroke_target.id]:
+                        link = LinkingTable(nwb_id=section_ref.id, top10nl_id=section_target.id, match_id=best_match.id)
+                        session.add(link)
+                        session.flush()
+
+        print('score:', best_match.similarity_score, ', ref stroke', best_match.strokes_ref[0].id)
 
 
 session.commit()
