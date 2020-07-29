@@ -1,11 +1,16 @@
-from dso import session, deviation_angle
+"""Module matching.py contains all function related to the matching of the delimited strokes"""
+
+from math import pi  # standard library
+
+from sqlalchemy import func  # 3rd party packages
+
+from dso import session, deviation_angle  # local source
 from structure import JunctionTarget, Match
-from sqlalchemy import func
 from helpers import angle_at_junction, angle_difference, get_length
-from math import pi
 
 
 def other_junction(road_section, junction):
+    """Determines the other junction of the input road section, that is not equal to the input junction."""
     assert(road_section.begin_junction == junction or road_section.end_junction == junction)
     if road_section.begin_junction == junction:
         return road_section.end_junction
@@ -14,6 +19,8 @@ def other_junction(road_section, junction):
 
 
 def has_good_continuity(stroke_a, stroke_b, junction):
+    """Determines if the input strokes have good continuity with each other,
+    that is an angle within 180 (+- deviation) degrees."""
     angle_a = angle_at_junction(stroke_a, junction)
     angle_b = angle_at_junction(stroke_b, junction)
     return pi-deviation_angle < angle_difference(angle_a, angle_b) < pi+deviation_angle
@@ -21,15 +28,20 @@ def has_good_continuity(stroke_a, stroke_b, junction):
 
 def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_target, tolerance_distance):
     """Extends the input delimited strokes with strokes that have good continuity at input junction,
-    until a good match is found or if no match is possible"""
+    until a good match is found or if no match is possible."""
     if get_length(stroke_ref) < get_length(stroke_target):
         stroke_to_extend = stroke_ref
+        stroke_to_compare = stroke_target
         junction_to_extend = junction_ref
         junction_to_compare = junction_target
+        # print('extend from ref:', stroke_ref[-1].id, 'match with', stroke_target[-1].id)
+
     else:
         stroke_to_extend = stroke_target
+        stroke_to_compare = stroke_ref
         junction_to_extend = junction_target
         junction_to_compare = junction_ref
+        # print('extend from target:', stroke_target[-1].id, 'match with', stroke_ref[-1].id)
 
     new_stroke = None
     if junction_to_extend.type_k3 == 1:
@@ -39,7 +51,7 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
                 new_stroke = road_section.delimited_stroke
 
     if junction_to_extend.degree > 1:
-        print(f'extend stroke {stroke_to_extend[-1].id} at junction {junction_to_extend.id}, compare with {junction_to_compare.id}')
+        # print(f'extend stroke {stroke_to_extend[-1].id} at junction {junction_to_extend.id}, compare with  {junction_to_compare.id}')
         for road_section in junction_to_extend.road_sections:
             # print(f'road_section: {road_section.delimited_stroke.id}, stroke to extend: {stroke_to_extend[-1].id}, junction_to_extend: {junction_to_extend.id}')
             if road_section.delimited_stroke != stroke_to_extend[-1] and has_good_continuity(road_section, stroke_to_extend[-1], junction_to_extend):
@@ -47,28 +59,32 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
 
     if new_stroke and (new_stroke.begin_junction == junction_to_extend or new_stroke.end_junction == junction_to_extend):
         stroke_to_extend.append(new_stroke)
-        new_end_junction = other_junction(stroke_to_extend[-1], junction_to_extend)
-        point_distance = session.query(func.st_distance(new_end_junction.geom, junction_to_compare.geom))[0][0]
+        junction_to_extend = other_junction(stroke_to_extend[-1], junction_to_extend)
+        point_distance = session.query(func.st_distance(junction_to_extend.geom, junction_to_compare.geom))[0][0]
         if point_distance < tolerance_distance:
-            print(f'new match with {stroke_ref[0].id}')
+            # print(f'new match with {stroke_ref[0].id}')
             return Match(stroke_ref, stroke_target)
-
-    # TODO make recursive
-    max_iterations = 3
-    i = 0
-    while i < max_iterations:
-        i += 1
-
+        elif session.query(func.st_distance(junction_to_extend.geom, stroke_to_compare[-1].geom))[0][0] < tolerance_distance or \
+                session.query(func.st_distance(junction_to_compare.geom, stroke_to_extend[-1].geom))[0][0] < tolerance_distance:
+            if stroke_to_extend == stroke_ref:
+                return extend_matching_pair(stroke_ref, stroke_target, junction_to_extend, junction_target, tolerance_distance)
+            elif stroke_to_extend == stroke_target:
+                return extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_to_extend, tolerance_distance)
+            else:
+                print('Error: wrong stroke')
     return None
 
 
 def get_distance(object_a, object_b):
+    """Calculates the distance between two geometries."""
     assert object_a.geom is not None
     assert object_b.geom is not None
-    return session.query(func.st_distance(object_a.geom, object_b.geom)).first()[0]
+    return session.query(func.st_distance(object_a.geom, object_b.geom))[0][0]
 
 
 def find_matching_candidates(stroke_ref, tolerance_distance):
+    """Searches a match for stroke_ref. The starting junction of the matched stroke has to be within the
+    tolerance_distance. If the end junction is not within the tolerance_distance, extend_matching_pair is called."""
     matches = []
     junction_candidates = nearby_junctions(stroke_ref.begin_junction, tolerance_distance)
     junction_ref = stroke_ref.begin_junction
@@ -107,13 +123,13 @@ def find_matching_candidates(stroke_ref, tolerance_distance):
 
 
 def nearby_junctions(junction_ref, tolerance_distance):
-    """Finds the junctions in the target database that are within the tolerance distance of junction_ref"""
+    """Finds the junctions in the target database that are within the tolerance distance of junction_ref."""
     junctions = session.query(JunctionTarget).filter(func.st_dwithin(JunctionTarget.geom, junction_ref.geom,
                                                                      tolerance_distance))
     return junctions
 
 
 def reset_matches(strokes):
-    """Resets the match of each delimited stroke from the input strokes"""
+    """Resets the match of each delimited stroke from the input strokes."""
     for each in strokes:
         each.match_id = None

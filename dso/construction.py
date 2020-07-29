@@ -1,12 +1,18 @@
-from math import pi
-from sqlalchemy import func
-from dso import deviation_angle, session, delimited_strokes_ref, delimited_strokes_target
+"""Module construction.py handles the classification of junctions and construction of delimited strokes."""
+
+from math import pi  # standard library
+
+from sqlalchemy import func  # 3rd party packages
+
+from dso import deviation_angle, session, delimited_strokes_ref, delimited_strokes_target  # local source
 from helpers import angle_at_junction, clockwise_angle_difference
-from structure import DelimitedStrokeRef, DelimitedStrokeTarget
+from structure import DelimitedStrokeRef
 
 
 def classify_junction(junction):
-    """Determines the structure classification of a junction with degree 3."""
+    """Determines the type of a junction with degree 3. Types are numbered 0 to 2.
+    0 = Y-junction, 1 = W-junction, 2 = T-junction. Junctions of type 1 and 2 have an angle property, that is the angle
+    of the middle road section referenced from the north."""
     angles = []
     for road_section in junction.road_sections:
         angles.append(angle_at_junction(road_section, junction))
@@ -39,7 +45,7 @@ def classify_junctions(junctions):
 
 
 def construct_stroke(road_section, junction, delimited_stroke, level=1):
-    """Constructs a delimited stroke from the road_section, with junction as its starting point.
+    """Constructs a delimited stroke from road_section, with junction as its starting point.
     If a delimited_stroke is given as input, the next road_section is added to this delimited_stroke."""
     session.flush()
     if type(delimited_stroke) == DelimitedStrokeRef:
@@ -110,7 +116,7 @@ def construct_strokes(junctions, delimited_stroke_class):
 
 
 def construct_stroke_from_section(road_section, delimited_stroke_class, level=1, begin_junction=None):
-    """Constructs a stroke from a single section"""
+    """Constructs a stroke from a single road section."""
     delimited_stroke = delimited_stroke_class(geom=road_section.geom, begin_junction_id=road_section.begin_junction_id,
                                               end_junction_id=road_section.end_junction_id, level=level)
     if begin_junction:
@@ -129,7 +135,7 @@ def construct_stroke_from_section(road_section, delimited_stroke_class, level=1,
 
 
 def reset_delimited_strokes(road_sections):
-    """Resets each delimited stroke of the input road sections"""
+    """Resets each delimited stroke of the input road sections."""
     for each in road_sections:
         each.delimited_stroke = None
 
