@@ -128,8 +128,8 @@ def generate_output(matches):
 # execution of algorithm starts here
 start_time = time.time()
 
-preprocess_reference(1)
-preprocess_target(1)
+preprocess_reference(0)
+preprocess_target(0)
 
 print('---------------------')
 print('Matching strokes lvl 1')
@@ -139,18 +139,18 @@ matches_result += matching_process(level=1, tolerance_distance=20)
 
 session.flush()
 
-print('---------------------')
-print('Matching strokes lvl 2')
-
-prepare_strokes_lvl2(DelimitedStrokeRef)
-prepare_strokes_lvl2(DelimitedStrokeTarget)
-matches_result += matching_process(level=2, tolerance_distance=20)
+# print('---------------------')
+# print('Matching strokes lvl 2')
+#
+# prepare_strokes_lvl2(DelimitedStrokeRef)
+# prepare_strokes_lvl2(DelimitedStrokeTarget)
+# matches_result += matching_process(level=2, tolerance_distance=20)
 
 generate_output(matches_result)
-
 
 session.commit()
 session.close()
 
 end_time = time.time()
-print('time elapsed:', end_time-start_time)
+print('---------------------')
+print('Matching completed, time elapsed:', end_time-start_time)

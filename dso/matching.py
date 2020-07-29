@@ -29,31 +29,30 @@ def has_good_continuity(stroke_a, stroke_b, junction):
 def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_target, tolerance_distance):
     """Extends the input delimited strokes with strokes that have good continuity at input junction,
     until a good match is found or if no match is possible."""
+    # create local variables of which stroke to extend and which to compare to when a new stroke is added
     if get_length(stroke_ref) < get_length(stroke_target):
         stroke_to_extend = stroke_ref
         stroke_to_compare = stroke_target
         junction_to_extend = junction_ref
         junction_to_compare = junction_target
-        # print('extend from ref:', stroke_ref[-1].id, 'match with', stroke_target[-1].id)
-
     else:
         stroke_to_extend = stroke_target
         stroke_to_compare = stroke_ref
         junction_to_extend = junction_target
         junction_to_compare = junction_ref
-        # print('extend from target:', stroke_target[-1].id, 'match with', stroke_ref[-1].id)
 
     new_stroke = None
+    # if the junction where the next stroke is added is a W-junction (type 1), select the stroke of the outer road
+    # sections to be added
     if junction_to_extend.type_k3 == 1:
-        for road_section in junction_to_extend.road_sections:
-            if road_section.delimited_stroke != stroke_to_extend[-1] and junction_to_extend.angle_k3 != \
-                    angle_at_junction(road_section, junction_to_extend):
-                new_stroke = road_section.delimited_stroke
+        if angle_at_junction(stroke_to_extend[-1], junction_to_extend) != junction_to_extend.angle_k3:
+            for road_section in junction_to_extend.road_sections:
+                if road_section.delimited_stroke != stroke_to_extend[-1] and junction_to_extend.angle_k3 != \
+                        angle_at_junction(road_section, junction_to_extend):
+                    new_stroke = road_section.delimited_stroke
 
     if junction_to_extend.degree > 1:
-        # print(f'extend stroke {stroke_to_extend[-1].id} at junction {junction_to_extend.id}, compare with  {junction_to_compare.id}')
         for road_section in junction_to_extend.road_sections:
-            # print(f'road_section: {road_section.delimited_stroke.id}, stroke to extend: {stroke_to_extend[-1].id}, junction_to_extend: {junction_to_extend.id}')
             if road_section.delimited_stroke != stroke_to_extend[-1] and has_good_continuity(road_section, stroke_to_extend[-1], junction_to_extend):
                 new_stroke = road_section.delimited_stroke
 
@@ -62,7 +61,6 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
         junction_to_extend = other_junction(stroke_to_extend[-1], junction_to_extend)
         point_distance = session.query(func.st_distance(junction_to_extend.geom, junction_to_compare.geom))[0][0]
         if point_distance < tolerance_distance:
-            # print(f'new match with {stroke_ref[0].id}')
             return Match(stroke_ref, stroke_target)
         elif session.query(func.st_distance(junction_to_extend.geom, stroke_to_compare[-1].geom))[0][0] < tolerance_distance or \
                 session.query(func.st_distance(junction_to_compare.geom, stroke_to_extend[-1].geom))[0][0] < tolerance_distance:
