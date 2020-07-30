@@ -51,6 +51,7 @@ def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_targe
                         angle_at_junction(road_section, junction_to_extend):
                     new_stroke = road_section.delimited_stroke
 
+    # for other junctions, select the stroke that has good continuity
     if junction_to_extend.degree > 1:
         for road_section in junction_to_extend.road_sections:
             if road_section.delimited_stroke != stroke_to_extend[-1] and has_good_continuity(road_section, stroke_to_extend[-1], junction_to_extend):
