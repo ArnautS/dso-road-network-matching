@@ -78,12 +78,13 @@ def matching_process(level, tolerance_distance):
     count = 0
     all_matches = []
     for stroke in strokes_ref:
-        try:
-            matches = find_matching_candidates(stroke, tolerance_distance)
-        except:
-            # related to matches of looping road sections
-            print('Something went wrong trying to find a match for stroke', stroke.id)
-            matches = None
+        # try:
+        matches = find_matching_candidates(stroke, tolerance_distance)
+        # except:
+        #     # related to matches of looping road sections
+        #     print('Something went wrong trying to find a match for stroke', stroke.id)
+        #     matches = None
+        # TODO add correct Exception, merging looping road sections is not possible
 
         if matches:
             best_score = 0
@@ -110,6 +111,10 @@ def matching_process(level, tolerance_distance):
 def generate_output(matches):
     session.query(LinkingTable).delete()
     for match in matches:
+        strokes = session.query(DelimitedStrokeRef).filter(DelimitedStrokeRef.match_id == match.id)
+        if not strokes.first():
+            print('Match', match.id, 'no longer exists')
+            continue
         for stroke_ref in match.strokes_ref:
             try:
                 for section_ref in delimited_strokes_ref[stroke_ref.id]:
@@ -139,13 +144,15 @@ matches_result += matching_process(level=1, tolerance_distance=20)
 
 session.flush()
 
-# print('---------------------')
-# print('Matching strokes lvl 2')
-#
-# prepare_strokes_lvl2(DelimitedStrokeRef)
-# prepare_strokes_lvl2(DelimitedStrokeTarget)
-# matches_result += matching_process(level=2, tolerance_distance=20)
+print('---------------------')
+print('Matching strokes lvl 2')
 
+prepare_strokes_lvl2(DelimitedStrokeRef)
+prepare_strokes_lvl2(DelimitedStrokeTarget)
+matches_result += matching_process(level=2, tolerance_distance=20)
+
+print('---------------------')
+print('Generating output')
 generate_output(matches_result)
 
 session.commit()
@@ -153,4 +160,4 @@ session.close()
 
 end_time = time.time()
 print('---------------------')
-print('Matching completed, time elapsed:', end_time-start_time)
+print('Matching completed, time elapsed:', round(end_time-start_time, 2), 's')
