@@ -1,4 +1,4 @@
-"""Module matching.py contains all function related to the matching of the delimited strokes"""
+"""Module matching.py contains all functions related to the matching of the delimited strokes"""
 
 from math import pi  # standard library
 
