@@ -80,12 +80,13 @@ def matching_process(level, tolerance_distance):
     count = 0
     all_matches = []
     for stroke in strokes_ref:
-        # try:
-        matches = find_matching_candidates(stroke, tolerance_distance)
-        # except:
-        #     # related to matches of looping road sections
-        #     print('Something went wrong trying to find a match for stroke', stroke.id)
-        #     matches = None
+        try:
+            matches = find_matching_candidates(stroke, tolerance_distance)
+        except AssertionError as e:
+            print(e)
+            print(traceback.format_exc())
+            print('Something went wrong trying to find a match for stroke', stroke.id)
+            matches = None
         # TODO add correct Exception, merging looping road sections is not possible
 
         if matches:

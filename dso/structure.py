@@ -124,7 +124,13 @@ class Match:
         self.geom_ref = None
         self.geom_target = None
         self.set_combined_geom()
-        self.similarity_score = self.set_similarity_score()
+        self.similarity_score = 0
+        if self.geom_ref is not None and self.geom_target is not None:
+            try:
+                self.similarity_score = self.set_similarity_score()
+            except TypeError as e:
+                print(e)
+                print('Could not calculate score for match', self.id)
 
     def set_combined_geom(self):
         """Combines the geometries of the strokes in the match, such that geometric properties can be calculated."""
