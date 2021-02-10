@@ -134,3 +134,4 @@ dmypy.json
 
 # Trial files
 .test/
+.data/
