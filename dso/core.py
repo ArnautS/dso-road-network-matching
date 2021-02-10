@@ -2,6 +2,7 @@
 output of the algorithm."""
 
 import time  # standard library
+import traceback
 
 from dso import session, delimited_strokes_ref, delimited_strokes_target  # local source
 from structure import RoadSectionRef, JunctionRef, RoadSectionTarget, JunctionTarget, DelimitedStrokeRef, \
@@ -13,8 +14,8 @@ from matching import find_matching_candidates
 
 def preprocess_reference(preprocessing_check):
     """"Handles the preprocessing of the reference dataset. Includes classification of junctions and construction of
-    delimited strokes at level 1. The input preprocessing_check can be set to false if junctions are already classified
-    and saved in the database."""
+        delimited strokes at level 1. Set the input preprocessing_check to false if the junctions are already
+        classified and saved in the database."""
     session.query(DelimitedStrokeRef).delete()
     reset_delimited_strokes(session.query(RoadSectionRef))
 
@@ -32,7 +33,8 @@ def preprocess_reference(preprocessing_check):
 
 def preprocess_target(preprocessing_check):
     """"Handles the preprocessing of the target dataset. Includes classification of junctions and construction of
-        delimited strokes at level 1."""
+        delimited strokes at level 1. Set the input preprocessing_check to false if the junctions are already
+        classified and saved in the database"""
     session.query(DelimitedStrokeTarget).delete()
     reset_delimited_strokes(session.query(RoadSectionTarget))
 
@@ -90,7 +92,7 @@ def matching_process(level, tolerance_distance):
             best_score = 0
             best_match = None
             for match in matches:
-                if match.similarity_score > best_score:
+                if match.similarity_score >= best_score:
                     best_match = match
                     best_score = match.similarity_score
 
@@ -113,7 +115,7 @@ def generate_output(matches):
     for match in matches:
         strokes = session.query(DelimitedStrokeRef).filter(DelimitedStrokeRef.match_id == match.id)
         if not strokes.first():
-            print('Match', match.id, 'no longer exists')
+            # print('Match', match.id, 'no longer exists')
             continue
         for stroke_ref in match.strokes_ref:
             try:
@@ -133,8 +135,8 @@ def generate_output(matches):
 # execution of algorithm starts here
 start_time = time.time()
 
-preprocess_reference(0)
-preprocess_target(0)
+preprocess_reference(1)
+preprocess_target(1)
 
 print('---------------------')
 print('Matching strokes lvl 1')

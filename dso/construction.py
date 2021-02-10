@@ -48,7 +48,7 @@ def construct_stroke(road_section, junction, delimited_stroke, level=1):
     """Constructs a delimited stroke from road_section, with junction as its starting point.
     If a delimited_stroke is given as input, the next road_section is added to this delimited_stroke."""
     session.flush()
-    # used delimited stroke dictionary based on type of the input stroke
+    # the delimited stroke dictionary use here is based on type of the input stroke
     if type(delimited_stroke) == DelimitedStrokeRef:
         delimited_strokes = delimited_strokes_ref
     else:
@@ -66,7 +66,8 @@ def construct_stroke(road_section, junction, delimited_stroke, level=1):
         delimited_stroke.end_junction_id = next_junction.id
         return delimited_stroke
 
-    # if the degree of the next junction is 2, the road section not equal to the input is added to the delimited stroke
+    # if the degree of the next junction is 2, the road section that is not equal to the input is added
+    # to the delimited stroke
     if next_junction.degree == 2:
         for next_road_section in next_junction.road_sections:
             if next_road_section != road_section:
@@ -121,7 +122,7 @@ def construct_strokes(junctions, delimited_stroke_class):
 
 
 def construct_stroke_from_section(road_section, delimited_stroke_class, level=1, begin_junction=None):
-    """Constructs a stroke from a single road section."""
+    """Creates an instance of the delimited stroke class from a single road section."""
     delimited_stroke = delimited_stroke_class(geom=road_section.geom, begin_junction_id=road_section.begin_junction_id,
                                               end_junction_id=road_section.end_junction_id, level=level)
     if begin_junction:
@@ -132,6 +133,7 @@ def construct_stroke_from_section(road_section, delimited_stroke_class, level=1,
     session.flush()
     road_section.delimited_stroke = delimited_stroke
 
+    # add the created stroke to the local storage
     if delimited_stroke_class == DelimitedStrokeRef:
         delimited_strokes_ref[delimited_stroke.id] = [road_section]
     else:

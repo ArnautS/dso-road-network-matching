@@ -14,7 +14,7 @@ from helpers import length_difference, combine_geom, get_area, get_length
 
 Base = declarative_base()
 
-area_name = 'nunspeet_validatie'  # name components of the tables to connect to
+area_name = 'oost'  # name components of the tables to connect to
 table_ref = 'nwb_' + area_name
 table_target = 'top10nl_' + area_name
 junction_table = '_vertices_pgr'

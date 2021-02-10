@@ -28,7 +28,8 @@ def has_good_continuity(stroke_a, stroke_b, junction):
 
 def extend_matching_pair(stroke_ref, stroke_target, junction_ref, junction_target, tolerance_distance):
     """Extends the input delimited strokes with strokes that have good continuity at input junction,
-    until a good match is found or if no match is possible."""
+    until a good match is found or if no match is possible. Stroke_ref and stroke_target are both lists of delimited
+    strokes."""
     # create local variables of which stroke to extend and which to compare to when a new stroke is added
     if get_length(stroke_ref) < get_length(stroke_target):
         stroke_to_extend = stroke_ref
